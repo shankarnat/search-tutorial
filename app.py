@@ -41,12 +41,26 @@ def handle_search():
                 **filters
             }
         },
+         aggs={
+        'category-agg': {
+            'terms': {
+                'field': 'category.keyword',
+            }
+        },
+    },
         size=5,
         from_=from_
     )
+    aggs = {
+        'Category': {
+            bucket['key']: bucket['doc_count']
+            for bucket in results['aggregations']['category-agg']['buckets']
+        }
+    }
     return render_template('index.html', results=results['hits']['hits'],
                            query=query, from_=from_,
-                           total=results['hits']['total']['value'])
+                           total=results['hits']['total']['value'],
+                           aggs=aggs)
 
 
 
