@@ -1,6 +1,7 @@
 import re
 from flask import Flask, render_template, request
 from search import Search
+from flask.cli import AppGroup
 
 
 app = Flask(__name__)
@@ -62,15 +63,27 @@ def handle_search():
                            total=results['hits']['total']['value'],
                            aggs=aggs)
 
+# Create an AppGroup for user-related commands
+user_cli = AppGroup('user')
 
 
-@app.cli.command()
+@user_cli.command('normal')
 def reindex():
     """Regenerate the Elasticsearch index."""
     response = es.reindex()
     print(f'Index with {len(response["items"])} documents created '
           f'in {response["took"]} milliseconds.')
     
+@user_cli.command('emb')
+def reindex_embeddings():
+    """Regenerate the Elasticsearch index."""
+    response = es.reindex_embeddings()
+    print(f'Index with {len(response["items"])} documents created '
+          f'in {response["took"]} milliseconds.')
+
+# Register the user_cli group with the Flask application
+app.cli.add_command(user_cli)    
+
 @app.get('/document/<id>')
 def get_document(id):
     document = es.retrieve_document(id)

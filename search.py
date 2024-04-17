@@ -2,6 +2,7 @@ import json
 from pprint import pprint
 import os
 import time
+import embeddings
 
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
@@ -20,11 +21,17 @@ class Search:
         self.es.indices.delete(index='my_documents', ignore_unavailable=True)
         self.es.indices.create(index='my_documents')
 
-    def insert_documents(self, documents):
+    def insert_documents(self, documents, emb_type = False):
         operations = []
-        for document in documents:
+        for document in documents:   
             operations.append({'index': {'_index': 'my_documents'}})
-            operations.append(document)
+            if (emb_type == False):
+                operations.append(document)
+            elif (emb_type == True):
+                operations.append({
+                **document,
+                'embedding': embeddings.gen_embeddings(document['summary']),
+                })
         return self.es.bulk(operations=operations)
 
     def reindex(self):
@@ -32,6 +39,12 @@ class Search:
         with open('data.json', 'rt') as f:
             documents = json.loads(f.read())
         return self.insert_documents(documents)
+    
+    def reindex_embeddings(self):
+        self.create_index()
+        with open('data.json', 'rt') as f:
+            documents = json.loads(f.read())
+        return self.insert_documents(documents, True)
     
     def search(self, **query_args):
         return self.es.search(index='my_documents', **query_args)
