@@ -21,6 +21,10 @@ class Search:
         self.es.indices.delete(index='my_documents', ignore_unavailable=True)
         self.es.indices.create(index='my_documents')
 
+    def has_embedding(self):
+        mapping = self.es.get_mappings(index='mydocuments')
+        return 'embedding' in mapping['my_documents']['mapping']['properties']
+
     def insert_documents(self, documents, emb_type = False):
         operations = []
         for document in documents:   
